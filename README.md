@@ -164,15 +164,7 @@ The Bicep modules provide the flexibility to selectively deploy the following Az
 
 ![Gateway API](./images/gateway-api.png)
 
-Gateway API provides the following advantages over Ingress Controllers:
-
-1. **Flexibility**: The Gateway API provides more flexible deployment strategies, allowing for near real-time updates to add or move pods, routes, and probes. This flexibility allows for more agile and efficient management of traffic.
-2. **Performance**: The Gateway API offers increased performance compared to an Ingress Controller. It allows for near real-time updates, ensuring that changes to pods, routes, and probes are reflected quickly. This can result in improved responsiveness and reduced latency for applications.
-3. **Traffic management features**: The Gateway API supports advanced traffic management features like layer 7 HTTP/HTTPS request forwarding based on various criteria such as hostname, path, headers, query string, methods, and ports. It also offers SSL termination and TLS policies for secure traffic management. These features enhance control and customization of traffic routing.
-4. **End-to-end SSL**: The Gateway API supports end-to-end SSL, allowing for secure communication between clients and backend targets. It also supports mutual authentication (mTLS) to verify the identity of backend targets, ensuring a higher level of security.
-5. **Autoscaling and availability zone resiliency**: The Gateway API provides autoscaling capabilities, allowing for automatic scaling of resources based on demand. It also offers availability zone resiliency, ensuring high availability and fault tolerance.
-
-The design of the Gateway API was driven by the following design goals to address and resolve issues and limitations in ingress controllers:
+Gateway API offers superior functionality compared to Ingress Controllers as it separates listeners and routes into separate Kubernetes objects, `Gateway` and `HTTPRoute`. This separation allows different individuals with distinct roles and permissions to deploy them in separate namespaces. Additionally, Gateway API provides advanced traffic management capabilities including layer 7 HTTP/HTTPS request forwarding based on criteria such as hostname, path, headers, query string, methods, and ports. It also offers SSL termination and TLS policies for secure traffic management. These features grant better control and customization of traffic routing. The design of the Gateway API was driven by the following design goals to address and resolve issues and limitations in ingress controllers:
 
 - **Role-oriented**: The Gateway API is composed of API resources that model organizational roles involved in using and configuring Kubernetes service networking.
 - **Portable**: Similar to Ingress, the Gateway API is designed to be a portable specification supported by multiple implementations.
