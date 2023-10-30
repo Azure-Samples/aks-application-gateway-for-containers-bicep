@@ -1,0 +1,14 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: httpbin-route
+  namespace: gateway-demo
+spec:
+  parentRefs:
+  - name: httpbin-gateway
+    namespace: gateway-demo
+    kind: Gateway
+  rules:
+  - backendRefs:
+    - name: httpbin
+      port: 80

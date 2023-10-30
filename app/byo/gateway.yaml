@@ -1,0 +1,31 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: httpbin-gateway
+  namespace: gateway-demo
+  annotations:
+    alb.networking.azure.io/alb-id: id
+    cert-manager.io/issuer: letsencrypt
+spec:
+  gatewayClassName: azure-alb-external
+  listeners:
+  - name: http
+    protocol: HTTP
+    port: 80
+    allowedRoutes:
+      namespaces:
+        from: All
+  - hostname: dummy.babosbird.com
+    name: https
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: listener-tls-secret
+  addresses:
+  - type: alb.networking.azure.io/alb-frontend
+    value: DefaultFrontend
