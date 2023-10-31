@@ -76,13 +76,14 @@ param nodeLabels object = {}
 ])
 param osType string
 
+@description('Specifies the OS SKU used by the user agent pool.')
 @allowed([
   'Ubuntu'
   'Windows2019'
   'Windows2022'
   'AzureLinux'
 ])
-param osSKU string
+param osSKU string = 'AzureLinux'
 
 @description('Specifies whether assign a public IP per agent node.')
 param enableNodePublicIP bool = false
