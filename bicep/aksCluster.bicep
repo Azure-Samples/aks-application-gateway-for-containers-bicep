@@ -164,14 +164,14 @@ param systemAgentPoolAgentCount int = 3
 ])
 param systemAgentPoolOsType string = 'Linux'
 
-@description('Specifies the OS SKU used by the system agent pool. If not specified, the default is Ubuntu if OSType=Linux or Windows2019 if OSType=Windows. And the default Windows OSSKU will be changed to Windows2022 after Windows2019 is deprecated.')
+@description('Specifies the OS SKU used by the user agent pool.')
 @allowed([
   'Ubuntu'
   'Windows2019'
   'Windows2022'
   'AzureLinux'
 ])
-param systemAgentPoolOsSKU string = 'Ubuntu'
+param systemAgentPoolOsSKU string = 'AzureLinux'
 
 @description('Specifies the maximum number of pods that can run on a node in the system node pool. The maximum number of pods per node in an AKS cluster is 250. The default maximum number of pods per node varies between kubenet and Azure CNI networking, and the method of cluster deployment.')
 param systemAgentPoolMaxPods int = 30
@@ -262,14 +262,14 @@ param userAgentPoolAgentCount int = 3
 ])
 param userAgentPoolOsType string = 'Linux'
 
-@description('Specifies the OS SKU used by the user agent pool. If not specified, the default is Ubuntu if OSType=Linux or Windows2019 if OSType=Windows. And the default Windows OSSKU will be changed to Windows2022 after Windows2019 is deprecated.')
+@description('Specifies the OS SKU used by the user agent pool.')
 @allowed([
   'Ubuntu'
   'Windows2019'
   'Windows2022'
   'AzureLinux'
 ])
-param userAgentPoolOsSKU string = 'Ubuntu'
+param userAgentPoolOsSKU string = 'AzureLinux'
 
 @description('Specifies the maximum number of pods that can run on a node in the user node pool. The maximum number of pods per node in an AKS cluster is 250. The default maximum number of pods per node varies between kubenet and Azure CNI networking, and the method of cluster deployment.')
 param userAgentPoolMaxPods int = 30
