@@ -69,7 +69,7 @@ az extension update --name aks-preview
 
 This sample provides a comprehensive set of Bicep modules that facilitate the deployment of an [Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/intro-kubernetes) cluster with an integrated [Application Gateway for Containers](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/overview). Additionally, it offers modules for the optional deployment of other essential Azure services, including the [Azure Monitor managed service for Prometheus](https://learn.microsoft.com/en-us/azure/azure-monitor/essentials/prometheus-metrics-overview) resource and an [Azure Managed Grafana](https://learn.microsoft.com/en-us/azure/managed-grafana/overview) instance for efficient monitoring of the cluster's performance and overall health status.
 
-The following diagram illustrates the architecture and networBicep modules are parametric, so that you can choose any network plugin. Currently, Application Gateway for Containers currently only supports [Azure CNI with static IP allocation](https://learn.microsoft.com/en-us/azure/aks/configure-azure-cni) and [Azure CNI with dynamic IP allocation](https://learn.microsoft.com/en-us/azure/aks/configure-azure-cni-dynamic-ip-allocation). In addition, this sample shows how to deploy an [Azure Kubernetes Service](https://docs.microsoft.com/en-us/azure/aks/intro-kubernetes) cluster with the following extensions and features:k topology implemented by this sample
+The following diagram illustrates the architecture and network topology implemented by this sample
 
 ![AKS Architecture](images/architecture.png)
 
@@ -151,7 +151,7 @@ The Bicep modules provide the flexibility to selectively deploy the following Az
 
 ## What is Gateway API?
 
-[Ingress Controller](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) and [Gateway API](https://gateway-api.sigs.k8s.io/) are both Kubernetes objects used for managing traffic routing and load balancing. The Designed to be generic, expressive, extensible, and role-oriented, the Gateway API is a modern set of APIs for defining L4 and L7 routing rules in Kubernetes. 
+The [Ingress resources](https://kubernetes.io/docs/concepts/services-networking/ingress/) Kubernetes objects have evolved into the more comprehensive and powerful Kubernetes [Gateway API](https://gateway-api.sigs.k8s.io/). [Ingress Controller](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) and [Gateway API](https://gateway-api.sigs.k8s.io/) are both Kubernetes objects used for managing traffic routing and load balancing. While [Ingress Controller](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) served as entry points for external traffic, they had limitations in terms of flexibility and extensibility. The Kubernetes [Gateway API](https://gateway-api.sigs.k8s.io/) emerged as a solution to address these limitations. The Designed to be generic, expressive, extensible, and role-oriented, the Gateway API is a modern set of APIs for defining L4 and L7 routing rules in Kubernetes.
 
 ![Gateway API](./images/gateway-api.png)
 
@@ -168,6 +168,18 @@ Additional notable capabilities of the Gateway API include:
 - **Shared Gateways and cross-Namespace support**: Allows multiple Route resources to attach to the same Gateway, enabling load balancer and VIP sharing among teams and across Namespaces without direct coordination.
 - **Typed Routes and typed backends**: The Gateway API supports typed Route resources and different types of backends, providing flexibility in supporting various protocols (HTTP, gRPC) and backend targets (Kubernetes Services, storage buckets, functions).
 - Experimental **Service mesh support** with the GAMMA initiative: The Gateway API enables the association of routing resources with Service resources, allowing configuration of service meshes and ingress controllers.
+
+## When to Choose Ingress Controllers or Gateway API
+
+[Ingress resources](https://kubernetes.io/docs/concepts/services-networking/ingress/) are suitable for certain use cases:
+
+- Ingress Controllers are a straightforward option for setting up and are well-suited for smaller and less complex Kubernetes deployments that prioritize easy configuration.
+- If you currently have Ingress controllers configured in your Kubernetes cluster and they meet your requirements effectively, there may not be an immediate necessity to transition to the Kubernetes Gateway API.
+
+[Gateway API](https://gateway-api.sigs.k8s.io/) is the recommended option in the following situations:
+
+- When dealing with complex routing configurations, traffic splitting, and advanced traffic management strategies, the flexibility provided by Kubernetes Gateway API's Route resources is essential.
+- In cases where networking requirements call for custom solutions or the integration of third-party plugins, the Kubernetes Gateway API's CRD-based approach offers enhanced extensibility.
 
 ## What is Application Gateway for Containers?
 
@@ -209,6 +221,8 @@ Azure Application Gateway for Containers offers a range of features and benefits
 - **Custom Health Probe**: You can define custom health probes to monitor the health of your containers and automatically route traffic away from unhealthy instances. For more information, see [Custom health probe for Application Gateway for Containers](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/custom-health-probe).
 - **Session Affinity**: The service provides session affinity, allowing you to maintain a consistent user experience by routing subsequent requests from the same client to the same container. For more information, see [Application Gateway for Containers session affinity overview](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/session-affinity?tabs=session-affinity-gateway-api).
 - **TLS Policy**: Application Gateway for Containers supports TLS termination, allowing you to offload the SSL/TLS encryption and decryption process to the gateway. For more information, see [Application Gateway for Containers TLS policy overview](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/tls-policy?tabs=tls-policy-gateway-api).
+- **Header Rewrites**: Application Gateway for Containers offers the capability to rewrite HTTP headers of client requests and responses from backend targets. Header Rewrites utilize the `IngressExtension` custom resource definition (CRD) of the Application Gateway for Containers. For more details, refer to the documentation on Header Rewrites for [Ingress API](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/how-to-header-rewrite-ingress-api) and [Gateway API](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/how-to-header-rewrite-gateway-api).
+- **URL Rewrites**: Application Gateway for Containers allows you to modify the URL of a client request, including the hostname and/or path. When Application Gateway for Containers initiates the request to the backend target, it includes the newly rewritten URL. Additional information on URL Rewrites can be found in the documentation for [Ingress API](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/how-to-url-rewrite-ingress-api) and [Gateway API](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/how-to-url-rewrite-gateway-api).
 
 ### Advanced Load Balancing
 
@@ -570,7 +584,7 @@ EOF"
     --install \
     --create-namespace \
     --namespace $applicationGatewayForContainersNamespace \
-    --version 0.5.024542 \
+    --version 0.6.1 \
     --set albController.podIdentity.clientID=$applicationGatewayForContainersManagedIdentityClientId"
 
     az aks command invoke \
@@ -747,7 +761,7 @@ EOF
       --install \
       --create-namespace \
       --namespace $applicationGatewayForContainersNamespace \
-      --version 0.5.024542 \
+      --version 0.6.1 \
       --set albController.namespace=$applicationGatewayForContainersNamespace \
       --set albController.podIdentity.clientID=$applicationGatewayForContainersManagedIdentityClientId
     
