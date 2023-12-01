@@ -940,7 +940,7 @@ resource cognitiveServicesUserRoleAssignment 'Microsoft.Authorization/roleAssign
 }
 
 // Create federated identity for the user-defined managed identity used by the workload
-resource federatedIdentityCredentials 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-01-31' = if (!empty(namespace) && !empty(serviceAccountName)) {
+resource federatedIdentityCredentials 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-01-31' = if (openAiEnabled && !empty(namespace) && !empty(serviceAccountName)) {
   name: 'WorkloadFederatedIdentityCredentials'
   parent: workloadManagedIdentity
   properties: {
