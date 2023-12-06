@@ -107,7 +107,7 @@ EOF"
     --install \
     --create-namespace \
     --namespace $applicationGatewayForContainersNamespace \
-    --version  0.6.1 \
+    --version  0.6.3 \
     --set albController.podIdentity.clientID=$applicationGatewayForContainersManagedIdentityClientId"
 
     az aks command invoke \
@@ -284,7 +284,7 @@ EOF
       --install \
       --create-namespace \
       --namespace $applicationGatewayForContainersNamespace \
-      --version  0.6.1 \
+      --version  0.6.3 \
       --set albController.namespace=$applicationGatewayForContainersNamespace \
       --set albController.podIdentity.clientID=$applicationGatewayForContainersManagedIdentityClientId
     
