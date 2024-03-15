@@ -4,18 +4,14 @@ cmRepoName="jetstack"
 cmRepoUrl="https://charts.jetstack.io"
 cmChartName="cert-manager"
 cmReleaseName="cert-manager"
-cmVersion="v1.8.0"
-
-# Application Gateway for Containers
-applicationGatewayForContainersName='TanApplicationGatewayForContainers'
-resourceGroupName='TanRG'
+cmVersion="v1.14.0"
 
 # Application Load Balancer 
 applicationLoadBalancerName="alb"
 applicationLoadBalancerNamespace="alb-infra"
 
 # Demo
-namespace="agfc-demo"
+namespace="agc-demo"
 gatewayName="echo-gateway"
 issuerName="letsencrypt"
 httpRouteName="echo-route"
@@ -23,5 +19,5 @@ httpRouteName="echo-route"
 # Ingress and DNS
 dnsZoneName="babosbird.com"
 dnsZoneResourceGroupName="DnsResourceGroup"
-subdomain="tanagfc"
+subdomain="shogunagc"
 hostname="$subdomain.$dnsZoneName"

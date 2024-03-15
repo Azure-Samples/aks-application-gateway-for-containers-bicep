@@ -176,10 +176,10 @@ param systemAgentPoolOsType string = 'Linux'
   'Windows2022'
   'AzureLinux'
 ])
-param systemAgentPoolOsSKU string = 'Ubuntu'
+param systemAgentPoolOsSKU string = 'AzureLinux'
 
 @description('Specifies the maximum number of pods that can run on a node in the system node pool. The maximum number of pods per node in an AKS cluster is 250. The default maximum number of pods per node varies between kubenet and Azure CNI networking, and the method of cluster deployment.')
-param systemAgentPoolMaxPods int = 30
+param systemAgentPoolMaxPods int = 100
 
 @description('Specifies the maximum number of nodes for auto-scaling for the system node pool.')
 param systemAgentPoolMaxCount int = 5
@@ -274,10 +274,10 @@ param userAgentPoolOsType string = 'Linux'
   'Windows2022'
   'AzureLinux'
 ])
-param userAgentPoolOsSKU string = 'Ubuntu'
+param userAgentPoolOsSKU string = 'AzureLinux'
 
 @description('Specifies the maximum number of pods that can run on a node in the user node pool. The maximum number of pods per node in an AKS cluster is 250. The default maximum number of pods per node varies between kubenet and Azure CNI networking, and the method of cluster deployment.')
-param userAgentPoolMaxPods int = 30
+param userAgentPoolMaxPods int = 100
 
 @description('Specifies the maximum number of nodes for auto-scaling for the user node pool.')
 param userAgentPoolMaxCount int = 5
@@ -406,14 +406,20 @@ param windowsAgentPoolEnableAutoScaling bool = true
 @description('Specifies whether the httpApplicationRouting add-on is enabled or not.')
 param httpApplicationRoutingEnabled bool = false
 
-@description('Specifies whether the Open Service Mesh add-on is enabled or not.')
-param openServiceMeshEnabled bool = false
-
 @description('Specifies whether the Istio Service Mesh add-on is enabled or not.')
 param istioServiceMeshEnabled bool = false
 
+@description('Istio Service Mesh Certificate Authority (CA) configuration. For now, we only support plugin certificates as described here https://aka.ms/asm-plugin-ca')
+param istioCertificateAuthority object = {}
+
 @description('Specifies whether the Istio Ingress Gateway is enabled or not.')
 param istioIngressGatewayEnabled bool = false
+
+@description('Specifies whether the Istio Egress Gateway is enabled or not.')
+param istioEgressGatewayEnabled bool = false
+
+@description('Specifies the node selector for the Istio Egress Gateway.')
+param istioNodeSelector object = {}
 
 @description('Specifies the type of the Istio Ingress Gateway.')
 @allowed([
@@ -421,6 +427,10 @@ param istioIngressGatewayEnabled bool = false
   'External'
 ])
 param istioIngressGatewayType string = 'External'
+
+@description('The list of revisions of the Istio control plane. When an upgrade is not in progress, this holds one value. When canary upgrade is in progress, this can only hold two consecutive values. For more information, see: /azure/aks/istio-upgrade')
+param istioRevisions array = []
+
 
 @description('Specifies whether the Kubernetes Event-Driven Autoscaler (KEDA) add-on is enabled or not.')
 param kedaEnabled bool = false
@@ -1246,10 +1256,13 @@ module aksCluster 'aksCluster.bicep' = {
     userAgentPoolAvailabilityZones: userAgentPoolAvailabilityZones
     userAgentPoolKubeletDiskType: userAgentPoolKubeletDiskType
     httpApplicationRoutingEnabled: httpApplicationRoutingEnabled
-    openServiceMeshEnabled: openServiceMeshEnabled
     istioServiceMeshEnabled: istioServiceMeshEnabled
+    istioCertificateAuthority: istioCertificateAuthority
     istioIngressGatewayEnabled: istioIngressGatewayEnabled
     istioIngressGatewayType: istioIngressGatewayType
+    istioEgressGatewayEnabled: istioEgressGatewayEnabled
+    istioNodeSelector: istioNodeSelector
+    istioRevisions: istioRevisions
     kedaEnabled: kedaEnabled
     daprEnabled: daprEnabled
     daprHaEnabled: daprHaEnabled
@@ -1286,8 +1299,6 @@ module aksCluster 'aksCluster.bicep' = {
     prometheusAndGrafanaEnabled: prometheusAndGrafanaEnabled
     metricAnnotationsAllowList: metricAnnotationsAllowList
     metricLabelsAllowlist: metricLabelsAllowlist
-    openAiEnabled: openAiEnabled
-    letterCaseType: letterCaseType
     namespace: namespace
     serviceAccountName: serviceAccountName
     userId: userId
