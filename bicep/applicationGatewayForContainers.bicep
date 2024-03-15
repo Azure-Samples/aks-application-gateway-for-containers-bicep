@@ -54,7 +54,7 @@ var metrics = [for category in metricCategories: {
 }]
 
 // Resources
-resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-03-02-preview' existing = {
+resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-01-02-preview' existing = {
   name: aksClusterName
 }
 

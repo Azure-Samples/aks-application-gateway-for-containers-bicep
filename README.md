@@ -311,10 +311,10 @@ param virtualNetworkName string
 @description('Specifies the name of the subnet which contains the Application Gateway for Containers.')
 param subnetName string
 
-@description('Specifies the namespace for the Application Load Balancer (ALB) Controller of the Application Gateway for Containers.')
+@description('Specifies the namespace for the Application Load Balancer Controller of the Application Gateway for Containers.')
 param namespace string = 'azure-alb-system'
 
-@description('Specifies the name of the service account for the Application Load Balancer (ALB) Controller of the Application Gateway for Containers.')
+@description('Specifies the name of the service account for the Application Load Balancer Controller of the Application Gateway for Containers.')
 param serviceAccountName string = 'alb-controller-sa'
 
 @description('Specifies the resource tags for the Application Gateway for Containers.')
@@ -338,7 +338,7 @@ var metrics = [for category in metricCategories: {
 }]
 
 // Resources
-resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-03-02-preview' existing = {
+resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-01-02-preview' existing = {
   name: aksClusterName
 }
 
@@ -514,7 +514,7 @@ if [[ $private == 'true' ]]; then
   echo "$clusterName AKS cluster is private"
 
   # Install Prometheus
-  command="helm upgrade prometheus prometheus-community/kube-prometheus-stack \ù
+  command="helm upgrade prometheus prometheus-community/kube-prometheus-stack \
   --install \
   --create-namespace \
   --namespace prometheus \
@@ -532,7 +532,7 @@ if [[ $private == 'true' ]]; then
     --install \
     --create-namespace \
     --namespace cert-manager \
-    --version v1.8.0 \
+    --version v1.14.0 \
     --set installCRDs=true \
     --set nodeSelector.\"kubernetes\.io/os\"=linux \
     --set \"extraArgs={--feature-gates=ExperimentalGatewayAPISupport=true}\""
@@ -710,7 +710,7 @@ else
     --install \
     --create-namespace \
     --namespace cert-manager \
-    --version v1.8.0 \
+    --version v1.14.0 \
     --set installCRDs=true \
     --set nodeSelector."kubernetes\.io/os"=linux \
     --set "extraArgs={--feature-gates=ExperimentalGatewayAPISupport=true}"
@@ -869,7 +869,8 @@ echo '{}' |
   jq --arg x $namespace '.namespace=$x' |
   jq --arg x $serviceAccountName '.serviceAccountName=$x' |
   jq --arg x 'prometheus' '.prometheus=$x' |
-  jq --arg x 'cert-manager' '.certManager=$x' >$AZ_SCRIPTS_OUTPUT_PATH
+  jq --arg x 'cert-manager' '.certManager=$x' |
+  jq --arg x 'ingress-basic' '.nginxIngressController=$x' >$AZ_SCRIPTS_OUTPUT_PATH
 ```
 
 The script performs the following steps:
@@ -1018,15 +1019,14 @@ type: kubernetes.io/tls
 The `gateway.yaml` contains the definition of the Gateway used by the application. When using an Application Gateway for Containers managed by the ALB Controller, the frontend is auotmatically created for your by the ALB Controller.
 
 ```yaml
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: httpbin-gateway
   namespace: gateway-demo
   annotations:
+    alb.networking.azure.io/alb-id: id
     cert-manager.io/issuer: letsencrypt
-    alb.networking.azure.io/alb-name: alb
-    alb.networking.azure.io/alb-namespace: alb-infra
 spec:
   gatewayClassName: azure-alb-external
   listeners:
@@ -1047,6 +1047,9 @@ spec:
       mode: Terminate
       certificateRefs:
       - name: listener-tls-secret
+  addresses:
+  - type: alb.networking.azure.io/alb-frontend
+    value: DefaultFrontend
 ```
 
 ### Issuer
@@ -1062,7 +1065,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: 'paolos0@microsoft.com'
+    email: 'admin@contoso.com'
     privateKeySecretRef:
       name: letsencrypt
     solvers:
@@ -1090,7 +1093,7 @@ The certificate manager follows a series of steps to issue a certificate to the 
 The `httproute.yaml` contains the definition of the `HTTPRoute` object used to route requests to the service:
 
 ```yaml
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: httpbin-route
@@ -1117,18 +1120,14 @@ cmRepoName="jetstack"
 cmRepoUrl="https://charts.jetstack.io"
 cmChartName="cert-manager"
 cmReleaseName="cert-manager"
-cmVersion="v1.8.0"
-
-# Application Gateway for Containers
-applicationGatewayForContainersName='TanApplicationGatewayForContainers'
-resourceGroupName='TanRG'
+cmVersion="v1.14.0"
 
 # Application Load Balancer 
 applicationLoadBalancerName="alb"
 applicationLoadBalancerNamespace="alb-infra"
 
 # Demo
-namespace="agfc-demo"
+namespace="agc-demo"
 gatewayName="echo-gateway"
 issuerName="letsencrypt"
 httpRouteName="echo-route"
@@ -1136,7 +1135,7 @@ httpRouteName="echo-route"
 # Ingress and DNS
 dnsZoneName="babosbird.com"
 dnsZoneResourceGroupName="DnsResourceGroup"
-subdomain="tangw"
+subdomain="shogunagc"
 hostname="$subdomain.$dnsZoneName"
 ```
 

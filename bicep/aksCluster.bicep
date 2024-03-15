@@ -337,14 +337,20 @@ param userAgentPoolSpotMaxPrice int = -1
 @description('Specifies whether the httpApplicationRouting add-on is enabled or not.')
 param httpApplicationRoutingEnabled bool = false
 
-@description('Specifies whether the Open Service Mesh add-on is enabled or not.')
-param openServiceMeshEnabled bool = false
-
 @description('Specifies whether the Istio Service Mesh add-on is enabled or not.')
 param istioServiceMeshEnabled bool = false
 
+@description('Istio Service Mesh Certificate Authority (CA) configuration. For now, we only support plugin certificates as described here https://aka.ms/asm-plugin-ca')
+param istioCertificateAuthority object = {}
+
 @description('Specifies whether the Istio Ingress Gateway is enabled or not.')
 param istioIngressGatewayEnabled bool = false
+
+@description('Specifies whether the Istio Egress Gateway is enabled or not.')
+param istioEgressGatewayEnabled bool = false
+
+@description('Specifies the node selector for the Istio Egress Gateway.')
+param istioNodeSelector object = {}
 
 @description('Specifies the type of the Istio Ingress Gateway.')
 @allowed([
@@ -352,6 +358,9 @@ param istioIngressGatewayEnabled bool = false
   'External'
 ])
 param istioIngressGatewayType string = 'External'
+
+@description('The list of revisions of the Istio control plane. When an upgrade is not in progress, this holds one value. When canary upgrade is in progress, this can only hold two consecutive values. For more information, see: /azure/aks/istio-upgrade')
+param istioRevisions array = []
 
 @description('Specifies whether the Kubernetes Event-Driven Autoscaler (KEDA) add-on is enabled or not.')
 param kedaEnabled bool = false
@@ -473,17 +482,6 @@ param metricAnnotationsAllowList string = ''
 @description('Specifies a comma-separated list of Kubernetes annotations keys that will be used in the resource labels metric.')
 param metricLabelsAllowlist string = ''
 
-@description('Specifies whether to create an Azure OpenAI Service resource or not.')
-param openAiEnabled bool = false
-
-@description('Specifies whether name resources are in CamelCase, UpperCamelCase, or KebabCase.')
-@allowed([
-  'CamelCase'
-  'UpperCamelCase'
-  'KebabCase'
-])
-param letterCaseType string = 'UpperCamelCase'
-
 @description('Specifies the namespace of the application.')
 param namespace string
 
@@ -597,7 +595,7 @@ resource apiServerSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-08-01' 
   name: apiServerSubnetName
 }
 
-resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-06-02-preview' = {
+resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-01-02-preview' = {
   name: name
   location: location
   tags: tags
@@ -689,10 +687,6 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-06-02-previ
       httpApplicationRouting: {
         enabled: httpApplicationRoutingEnabled
       }
-      openServiceMesh: {
-        enabled: openServiceMeshEnabled
-        config: {}
-      }
       omsagent: {
         enabled: true
         config: {
@@ -742,9 +736,7 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-06-02-previ
         enabled: kedaEnabled
       }
       verticalPodAutoscaler: {
-        controlledValues: 'RequestsAndLimits'
         enabled: verticalPodAutoscalerEnabled
-        updateMode: 'Off'
       }
     }
     aadProfile: {
@@ -807,14 +799,22 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-06-02-previ
     }
     serviceMeshProfile: istioServiceMeshEnabled ? {
       istio: {
+        certificateAuthority: istioCertificateAuthority
         components: {
           ingressGateways: istioIngressGatewayEnabled ? [
             {
-              enabled: true
+              enabled: istioIngressGatewayEnabled
               mode: istioIngressGatewayType
             }
           ] : null
+          egressGateways: istioEgressGatewayEnabled ? [
+            {
+              enabled: istioEgressGatewayEnabled
+              nodeSelector: istioNodeSelector
+            }
+          ] : null
         }
+        revisions: istioRevisions
       }
       mode: 'Istio'
     } : null
@@ -901,7 +901,7 @@ resource keyVaultSecretsUserApplicationGatewayIdentityRoleAssignment 'Microsoft.
 }
 
 resource keyVaultCSIdriverSecretsUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (azureKeyvaultSecretsProviderEnabled) {
-  name: guid(aksCluster.id, 'CSIDriver', keyVaultSecretsUserRole.id)
+  name: guid(aksCluster.id, 'Key Vault CSI Driver', keyVaultSecretsUserRole.id)
   scope: keyVault
   properties: {
     roleDefinitionId: keyVaultSecretsUserRole.id
@@ -922,14 +922,14 @@ resource FastAlertingRoleAssignment 'Microsoft.Authorization/roleAssignments@202
 }
 
 //  This user-defined managed identity used by the workload to connect to the Azure OpenAI resource with a security token issued by Azue Active Directory
-resource workloadManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = if (openAiEnabled) {
+resource workloadManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: workloadManagedIdentityName
   location: location
   tags: tags
 }
 
 // Assign the Cognitive Services User role to the user-defined managed identity used by workloads
-resource cognitiveServicesUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (openAiEnabled) {
+resource cognitiveServicesUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name:  guid(workloadManagedIdentity.id, cognitiveServicesUserRole.id)
   scope: resourceGroup()
   properties: {
@@ -940,7 +940,7 @@ resource cognitiveServicesUserRoleAssignment 'Microsoft.Authorization/roleAssign
 }
 
 // Create federated identity for the user-defined managed identity used by the workload
-resource federatedIdentityCredentials 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-01-31' = if (openAiEnabled && !empty(namespace) && !empty(serviceAccountName)) {
+resource federatedIdentityCredentials 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-01-31' = if (!empty(namespace) && !empty(serviceAccountName)) {
   name: 'WorkloadFederatedIdentityCredentials'
   parent: workloadManagedIdentity
   properties: {

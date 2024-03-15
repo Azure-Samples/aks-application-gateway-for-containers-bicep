@@ -5,7 +5,7 @@ template="main.bicep"
 parameters="main.parameters.json"
 
 # AKS cluster name
-prefix="Tan"
+prefix="Shogun"
 aksName="${prefix}Aks"
 validateTemplate=1
 useWhatIf=1

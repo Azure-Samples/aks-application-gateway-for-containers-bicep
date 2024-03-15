@@ -30,7 +30,12 @@
       "value": "azadmin"
     },
     "aksClusterSshPublicKey": {
-      "value": "<ssh-public-key>"
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/1a45a694-ae23-4650-9774-89a571c462f6/resourceGroups/BaboKeyVaultResourceGroup/providers/Microsoft.KeyVault/vaults/BaboKeyVault"
+        },
+        "secretName": "aksClusterSshPublicKey"
+      }
     },
     "aksClusterMonitoringEnabled": {
       "value": true
@@ -43,14 +48,14 @@
     },
     "aadProfileAdminGroupObjectIDs": {
       "value": [
-        "<admins-aad-security-group-object-id>"
+        "a7d2d147-623c-4fcf-b0d4-81ffd977ac6b"
       ]
     },
     "systemAgentPoolName": {
       "value": "system"
     },
     "systemAgentPoolVmSize": {
-      "value": "Standard_D4s_v3"
+      "value": "Standard_D4a_v4"
     },
     "systemAgentPoolOsDiskSizeGB": {
       "value": 80
@@ -73,7 +78,7 @@
       "value": "user"
     },
     "userAgentPoolVmSize": {
-      "value": "Standard_D4s_v3"
+      "value": "Standard_D4a_v4"
     },
     "userAgentPoolOsDiskSizeGB": {
       "value": 80
@@ -194,7 +199,12 @@
       "value": "azadmin"
     },
     "vmAdminPasswordOrKey": {
-      "value": "<ssh-public-key>"
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/1a45a694-ae23-4650-9774-89a571c462f6/resourceGroups/BaboKeyVaultResourceGroup/providers/Microsoft.KeyVault/vaults/BaboKeyVault"
+        },
+        "secretName": "vmAdminSshPublicKey"
+      }
     },
     "diskStorageAccountType": {
       "value": "Premium_LRS"
@@ -219,14 +229,11 @@
     },
     "keyVaultObjectIds": {
       "value": [
-        "<aad-security-group-or-account-object-id>"
+        "0c5267b2-01f3-4a59-970e-0d9218d5412e"
       ]
     },
-    "openServiceMeshEnabled": {
-      "value": false
-    },
     "istioServiceMeshEnabled": {
-      "value": true
+      "value": false
     },
     "istioIngressGatewayEnabled": {
       "value": true
@@ -238,10 +245,10 @@
       "value": true
     },
     "daprEnabled": {
-      "value": true
+      "value": false
     },
     "fluxGitOpsEnabled": {
-      "value": true
+      "value": false
     },
     "verticalPodAutoscalerEnabled": {
       "value": true

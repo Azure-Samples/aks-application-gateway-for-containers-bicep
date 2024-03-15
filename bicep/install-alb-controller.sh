@@ -23,6 +23,7 @@ chmod 700 get_helm.sh
 
 # Add Helm repos
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo add jetstack https://charts.jetstack.io
 
 # Update Helm repos
@@ -37,7 +38,7 @@ if [[ $private == 'true' ]]; then
   echo "$clusterName AKS cluster is private"
 
   # Install Prometheus
-  command="helm upgrade prometheus prometheus-community/kube-prometheus-stack \ù
+  command="helm upgrade prometheus prometheus-community/kube-prometheus-stack \
   --install \
   --create-namespace \
   --namespace prometheus \
@@ -50,15 +51,62 @@ if [[ $private == 'true' ]]; then
     --subscription $subscriptionId \
     --command "$command"
 
+  # Install NGINX ingress controller using the internal load balancer
+  command="helm upgrade nginx-ingress ingress-nginx/ingress-nginx \
+    --install \
+    --create-namespace \
+    --namespace ingress-basic \
+    --set controller.replicaCount=3 \
+    --set controller.nodeSelector.\"kubernetes\.io/os\"=linux \
+    --set defaultBackend.nodeSelector.\"kubernetes\.io/os\"=linux \
+    --set controller.metrics.enabled=true \
+    --set controller.metrics.serviceMonitor.enabled=true \
+    --set controller.metrics.serviceMonitor.additionalLabels.release=\"prometheus\" \
+    --set controller.service.annotations.\"service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path\"=/healthz"
+
+  az aks command invoke \
+    --name $clusterName \
+    --resource-group $resourceGroupName \
+    --subscription $subscriptionId \
+    --command "$command"
+
   # Install certificate manager
   command="helm upgrade cert-manager jetstack/cert-manager \
     --install \
     --create-namespace \
     --namespace cert-manager \
-    --version v1.8.0 \
+    --version v1.14.0 \
     --set installCRDs=true \
     --set nodeSelector.\"kubernetes\.io/os\"=linux \
     --set \"extraArgs={--feature-gates=ExperimentalGatewayAPISupport=true}\""
+
+  az aks command invoke \
+    --name $clusterName \
+    --resource-group $resourceGroupName \
+    --subscription $subscriptionId \
+    --command "$command"
+
+  # Create cluster issuer
+  command="cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-nginx
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: $email
+    privateKeySecretRef:
+      name: letsencrypt
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+          podTemplate:
+            spec:
+              nodeSelector:
+                "kubernetes.io/os": linux
+EOF"
 
   az aks command invoke \
     --name $clusterName \
@@ -227,13 +275,34 @@ else
     exit -1
   fi
 
+  # Install NGINX ingress controller using the internal load balancer
+  echo "Installing NGINX ingress controller..."
+  helm upgrade nginx-ingress ingress-nginx/ingress-nginx \
+    --install \
+    --create-namespace \
+    --namespace ingress-basic \
+    --set controller.replicaCount=3 \
+    --set controller.nodeSelector."kubernetes\.io/os"=linux \
+    --set defaultBackend.nodeSelector."kubernetes\.io/os"=linux \
+    --set controller.metrics.enabled=true \
+    --set controller.metrics.serviceMonitor.enabled=true \
+    --set controller.metrics.serviceMonitor.additionalLabels.release="prometheus" \
+    --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz
+
+  if [[ $? == 0 ]]; then
+    echo "NGINX ingress controller successfully installed"
+  else
+    echo "Failed to install NGINX ingress controller"
+    exit -1
+  fi
+
   # Install certificate manager
   echo "Installing certificate manager..."
   helm upgrade cert-manager jetstack/cert-manager \
     --install \
     --create-namespace \
     --namespace cert-manager \
-    --version v1.8.0 \
+    --version v1.14.0 \
     --set installCRDs=true \
     --set nodeSelector."kubernetes\.io/os"=linux \
     --set "extraArgs={--feature-gates=ExperimentalGatewayAPISupport=true}"
@@ -244,6 +313,29 @@ else
     echo "Failed to install certificate manager"
     exit -1
   fi
+
+  # Create cluster issuer
+  echo "Creating cluster issuer..."
+  cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-nginx
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: $email
+    privateKeySecretRef:
+      name: letsencrypt
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+          podTemplate:
+            spec:
+              nodeSelector:
+                "kubernetes.io/os": linux
+EOF
 
   if [[ -n "$namespace" && \
         -n "$serviceAccountName" ]]; then
@@ -392,4 +484,5 @@ echo '{}' |
   jq --arg x $namespace '.namespace=$x' |
   jq --arg x $serviceAccountName '.serviceAccountName=$x' |
   jq --arg x 'prometheus' '.prometheus=$x' |
-  jq --arg x 'cert-manager' '.certManager=$x' >$AZ_SCRIPTS_OUTPUT_PATH
+  jq --arg x 'cert-manager' '.certManager=$x' |
+  jq --arg x 'ingress-basic' '.nginxIngressController=$x' >$AZ_SCRIPTS_OUTPUT_PATH

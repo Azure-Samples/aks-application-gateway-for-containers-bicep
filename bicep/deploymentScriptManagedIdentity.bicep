@@ -20,8 +20,8 @@ resource clusterAdminRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' e
   scope: subscription()
 }
 
-resource readerRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
-  name: 'acdd72a7-3385-48ef-bd42-f606fba81ae7'
+resource contributorRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
+  name: 'b24988ac-6180-42a0-ab88-20f7382dd24c'
   scope: subscription()
 }
 
@@ -46,13 +46,23 @@ resource clusterAdminContributorRoleAssignment 'Microsoft.Authorization/roleAssi
   }
 }
 
-// Assign the Reader role the Application Load Balancer user-assigned managed identity with the AKS cluster node resource group as a scope
-module nodeResourceGroupReaderRoleAssignment 'resourceGroupRoleAssignment.bicep' = {
-  name: guid(nodeResourceGroupName, managedIdentity.name, readerRole.id)
+// Assign the Contributor role to the user-assigned managed identity with the AKS cluster node resource group as a scope
+module nodeResourceGroupContributorRoleAssignment 'resourceGroupRoleAssignment.bicep' = {
+  name: guid(nodeResourceGroupName, managedIdentity.name, contributorRole.id)
   scope: resourceGroup(nodeResourceGroupName)
   params: {
     principalId: managedIdentity.properties.principalId
-    roleName: readerRole.name
+    roleName: contributorRole.name
+  }
+}
+
+// Assign the Contributor role the user-assigned managed identity with the AKS cluster resource group as a scope
+module resourceGroupContributorRoleAssignment 'resourceGroupRoleAssignment.bicep' = {
+  name: guid(resourceGroup().name, managedIdentity.name, contributorRole.id)
+  scope: resourceGroup()
+  params: {
+    principalId: managedIdentity.properties.principalId
+    roleName: contributorRole.name
   }
 }
 
