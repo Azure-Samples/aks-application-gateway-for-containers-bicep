@@ -55,7 +55,7 @@
       "value": "system"
     },
     "systemAgentPoolVmSize": {
-      "value": "Standard_D4a_v4"
+      "value": "Standard_D4as_v4"
     },
     "systemAgentPoolOsDiskSizeGB": {
       "value": 80
@@ -78,7 +78,7 @@
       "value": "user"
     },
     "userAgentPoolVmSize": {
-      "value": "Standard_D4a_v4"
+      "value": "Standard_D4as_v4"
     },
     "userAgentPoolOsDiskSizeGB": {
       "value": 80
