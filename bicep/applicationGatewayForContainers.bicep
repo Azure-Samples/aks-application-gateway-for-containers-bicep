@@ -143,7 +143,7 @@ resource federatedIdentityCredentials 'Microsoft.ManagedIdentity/userAssignedIde
   }
 }
 
-resource applicationGatewayForContainers 'Microsoft.ServiceNetworking/trafficControllers@2023-05-01-preview' = if (type == 'byo') {
+resource applicationGatewayForContainers 'Microsoft.ServiceNetworking/trafficControllers@2023-11-01' = if (type == 'byo') {
   name: name
   location: location
   tags: tags
